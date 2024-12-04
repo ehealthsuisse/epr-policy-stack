@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <Appenders>
+        <Console name="CONSOLE" target="SYSTEM_OUT" follow="true">
+            <PatternLayout charset="UTF-8">
+                <Pattern>%d{DEFAULT} [%t] %-5p - %C{1}.%M(%L) | %m%n</Pattern>
+            </PatternLayout>
+        </Console>
+
+        <RollingFile name="FILE" fileName="logs/adr-test.log" filePattern="logs/adr-test.%d{yyyy-MM-dd}.log.gz" ignoreExceptions="false">
+            <PatternLayout>
+                <Pattern>%d{DEFAULT} [%t] %-5p - %C{1}.%M(%L) | %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="WARN">
+            <AppenderRef ref="CONSOLE"/>
+            <AppenderRef ref="FILE"/>
+        </Root>
+
+        <Logger name="ch.admin.foph.epr.policies" level="INFO"/>
+        <Logger name="org.herasaf" level="DEBUG"/>
+
+    </Loggers>
+
+</Configuration>
