@@ -1,101 +1,65 @@
 package ch.admin.foph.epr.policies
 
-import org.herasaf.xacml.core.context.impl.*
-import org.herasaf.xacml.core.dataTypeAttribute.DataTypeAttribute
+import groovy.transform.CompileStatic
+import org.herasaf.xacml.core.context.impl.ActionType
+import org.herasaf.xacml.core.context.impl.EnvironmentType
+import org.herasaf.xacml.core.context.impl.ObjectFactory
+import org.herasaf.xacml.core.context.impl.RequestType
+import org.herasaf.xacml.core.context.impl.ResourceType
+import org.herasaf.xacml.core.context.impl.ResultType
+import org.herasaf.xacml.core.context.impl.SubjectType
 import org.herasaf.xacml.core.dataTypeAttribute.impl.AnyURIDataTypeAttribute
-import org.herasaf.xacml.core.dataTypeAttribute.impl.DateDataTypeAttribute
-import org.herasaf.xacml.core.dataTypeAttribute.impl.StringDataTypeAttribute
-import org.openehealth.ipf.commons.ihe.xacml20.herasaf.types.CvDataTypeAttribute
-import org.openehealth.ipf.commons.ihe.xacml20.herasaf.types.IiDataTypeAttribute
-import org.openehealth.ipf.commons.ihe.xacml20.model.CE
-import org.openehealth.ipf.commons.ihe.xacml20.model.NameQualifier
-import org.openehealth.ipf.commons.ihe.xacml20.model.PurposeOfUse
-import org.openehealth.ipf.commons.ihe.xacml20.model.SubjectRole
-import org.openehealth.ipf.commons.ihe.xacml20.stub.hl7v3.CV
-import org.openehealth.ipf.commons.ihe.xacml20.stub.hl7v3.II
+import org.openehealth.ipf.commons.ihe.xacml20.Xacml20MessageCreator
+import org.openehealth.ipf.commons.ihe.xacml20.Xacml20Status
+import org.openehealth.ipf.commons.ihe.xacml20.stub.saml20.protocol.ResponseType
+import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.assertion.XACMLAuthzDecisionStatementType
+import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.protocol.XACMLAuthzDecisionQueryType
 
 import static org.openehealth.ipf.commons.ihe.xacml20.model.PpqConstants.AttributeIds
-import static org.openehealth.ipf.commons.ihe.xacml20.model.PpqConstants.CodingSystemIds
 
 /**
  * @author Dmytro Rud
  */
-class AdrMessageCreator {
+@CompileStatic
+class AdrMessageCreator extends Xacml20MessageCreator {
 
-    private static AttributeType createAttribute(String id, DataTypeAttribute dataType, Object value) {
-        if (!value) {
-            return null
-        }
-        return new AttributeType(
-                attributeId: id,
-                dataType: dataType,
-                attributeValues: [new AttributeValueType(content: [value])]
+    private static final ObjectFactory OBJECT_FACTORY = new ObjectFactory()
+
+    AdrMessageCreator(String homeCommunityId) {
+        super(homeCommunityId)
+    }
+
+    XACMLAuthzDecisionQueryType createAdrRequest(AdrAttributes<SubjectType> subjectAttrs, AdrAttributes<ResourceType> resourceAttrs, String actionId) {
+        def request = new XACMLAuthzDecisionQueryType(
+                ID: '_' + UUID.randomUUID(),
+                issueInstant: XML_OBJECT_FACTORY.newXMLGregorianCalendar(new GregorianCalendar()),
+                version: '2.0',
+                issuer: createIssuer(),
+                returnContext: false,
+                inputContextOnly: false,
         )
-    }
-
-    private static CV toCv(CE ce) {
-        if (!ce) {
-            return null
-        }
-        return new CV(
-                code:           ce.code,
-                codeSystem:     ce.codeSystem,
-                codeSystemName: ce.codeSystemName,
-                displayName:    ce.displayName,
-        )
-    }
-
-    private static II toIi(String eprSpid) {
-        return new II(extension: eprSpid, root: CodingSystemIds.SWISS_PATIENT_ID)
-    }
-
-    static RequestType createAdrRequest(
-            String subjectId,
-            NameQualifier subjectIdQualifier,
-            String homeCommunityId,
-            SubjectRole subjectRole,
-            String organizationOid,
-            PurposeOfUse purposeOfUse,
-            String resourceId,
-            String eprSpid,
-            CE confidentialityCode,
-            String referencedPolicySet,
-            String actionId,
-            String fromDate,
-            String toDate)
-    {
-        return new RequestType(
-                subjects: [
-                        new SubjectType(
-                                attributes: [
-                                        createAttribute(AttributeIds.XACML_1_0_SUBJECT_ID, new StringDataTypeAttribute(), subjectId),
-                                        createAttribute(AttributeIds.XACML_1_0_SUBJECT_ID_QUALIFIER, new StringDataTypeAttribute(), subjectIdQualifier.qualifier),
-                                        createAttribute(AttributeIds.XCA_2010_HOME_COMMUNITY_ID, new AnyURIDataTypeAttribute(), homeCommunityId),
-                                        createAttribute(AttributeIds.XACML_2_0_SUBJECT_ROLE, new CvDataTypeAttribute(), toCv(subjectRole.code)),
-                                        createAttribute(AttributeIds.XSPA_1_0_SUBJECT_ORGANIZATION_ID, new AnyURIDataTypeAttribute(), organizationOid),
-                                        createAttribute(AttributeIds.XSPA_1_0_SUBJECT_PURPOSE_OF_USE, new CvDataTypeAttribute(), toCv(purposeOfUse.code)),
-                                ].findAll {it},
-                        ),
-                ],
-                resources: [
-                        new ResourceType(
-                                attributes: [
-                                        createAttribute(AttributeIds.XACML_1_0_RESOURCE_ID, new IiDataTypeAttribute(), toIi(resourceId)),
-                                        createAttribute(AttributeIds.EHEALTH_SUISSSE_2015_EPR_SPID, new IiDataTypeAttribute(), toIi(eprSpid)),
-                                        createAttribute(AttributeIds.XDS_2007_CONFIDENTIALITY_CODE, new CvDataTypeAttribute(), toCv(confidentialityCode)),
-                                        createAttribute(AttributeIds.EHEALTH_SUISSSE_2015_REFERENCED_POLICY_SET, new AnyURIDataTypeAttribute(), referencedPolicySet),
-                                        createAttribute('urn:e-health-suisse:2023:policy-attributes:start-date', new DateDataTypeAttribute(), fromDate),
-                                        createAttribute('urn:e-health-suisse:2023:policy-attributes:end-date', new DateDataTypeAttribute(), toDate),
-                                ].findAll {it},
-                        ),
-                ],
-                action: new ActionType(
-                        attributes: [
-                                createAttribute(AttributeIds.XACML_1_0_ACTION_ID, new AnyURIDataTypeAttribute(), actionId),
-                        ].findAll {it},
-                ),
+        request.rest << OBJECT_FACTORY.createRequest(new RequestType(
+                subjects: subjectAttrs.createAdrRequestParts(),
+                resources: resourceAttrs.createAdrRequestParts(),
+                action: new ActionType(attributes: [
+                        AdrUtils.createAttr(AttributeIds.XACML_1_0_ACTION_ID, new AnyURIDataTypeAttribute(), actionId),
+                ]),
                 environment: new EnvironmentType(),
+        ))
+        return request
+    }
+
+    ResponseType createAdrResponse(XACMLAuthzDecisionQueryType adrRequest, Xacml20Status status, List <ResultType> results) {
+        def assertion = createAssertion()
+        assertion.statementOrAuthnStatementOrAuthzDecisionStatement << new XACMLAuthzDecisionStatementType(
+                response: new org.herasaf.xacml.core.context.impl.ResponseType(
+                        results: results,
+                ),
         )
+
+        def response = createResponse(status, null, assertion)
+        response.inResponseTo = adrRequest.ID
+        return response
     }
 
 }

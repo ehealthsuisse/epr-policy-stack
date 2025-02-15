@@ -7,6 +7,7 @@ import org.herasaf.xacml.core.context.impl.RequestType;
 import org.herasaf.xacml.core.policy.Evaluatable;
 import org.herasaf.xacml.core.policy.EvaluatableID;
 import org.herasaf.xacml.core.policy.PolicyMarshaller;
+import org.herasaf.xacml.core.policy.impl.EvaluatableIDImpl;
 import org.herasaf.xacml.core.policy.impl.PolicyType;
 import org.openehealth.ipf.commons.ihe.xacml20.Xacml20Utils;
 import org.openehealth.ipf.commons.xml.XmlUtils;
@@ -40,7 +41,9 @@ public class PolicyRepository implements PolicyRetrievalPoint {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
     private final Map<EvaluatableID, Evaluatable> basisPolicies = new HashMap<>();
-    private final Map<EvaluatableID, Evaluatable> patientPolicies = new HashMap<>();
+    private final Map<EvaluatableID, Evaluatable> patientPoliciesByPolicyId = new HashMap<>();
+    private final Map<String, List<Evaluatable>> patientPoliciesByEprSpid = new HashMap<>();
+
     private final Set<String> ruleIds = new HashSet<>();
 
     public PolicyRepository() throws Exception {
@@ -162,8 +165,7 @@ public class PolicyRepository implements PolicyRetrievalPoint {
         });
     }
 
-    private void registerPolicy(String fn, String xml, Map<EvaluatableID, Evaluatable> targetMap) throws Exception {
-        Evaluatable evaluatable = PolicyMarshaller.unmarshal(XmlUtils.source(xml));
+    private void registerPolicy(String fn, Evaluatable evaluatable, Map<EvaluatableID, Evaluatable> targetMap) throws Exception {
         if (evaluatable instanceof PolicyType policy) {
             String ruleId = policy.getOrderedRules().getFirst().getRuleId();
             log.debug("file {} --> rule ID {}", fn, ruleId);
@@ -187,7 +189,8 @@ public class PolicyRepository implements PolicyRetrievalPoint {
                 log.debug("Read base policy from {}", fn);
                 try (InputStream inputStream = new FileInputStream(fn)) {
                     String xml = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-                    registerPolicy(fn, xml, basisPolicies);
+                    Evaluatable evaluatable = PolicyMarshaller.unmarshal(XmlUtils.source(xml));
+                    registerPolicy(fn, evaluatable, basisPolicies);
                 }
             }
         }
@@ -214,19 +217,38 @@ public class PolicyRepository implements PolicyRetrievalPoint {
                 String xml = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
                 xml = xml.replaceAll("=\"epr-spid-goes-here\"", "=\"" + eprSpid + "\"");
                 xml = placeholderFiller.apply(xml);
-                registerPolicy(fn, xml, patientPolicies);
+                Evaluatable evaluatable = PolicyMarshaller.unmarshal(XmlUtils.source(xml));
+                registerPolicy(fn, evaluatable, patientPoliciesByPolicyId);
+                patientPoliciesByEprSpid.putIfAbsent(eprSpid, new ArrayList<>());
+                patientPoliciesByEprSpid.get(eprSpid).add(evaluatable);
             }
         }
     }
 
     @Override
     public Evaluatable getEvaluatable(EvaluatableID evaluatableId) {
-        return basisPolicies.getOrDefault(evaluatableId, patientPolicies.get(evaluatableId));
+        return basisPolicies.getOrDefault(evaluatableId, patientPoliciesByPolicyId.get(evaluatableId));
     }
 
+    /**
+     * Returns entry-point policies for the given ADR request: the ones related to the patient, to the PADM, and to the DADM.
+     */
     @Override
     public List<Evaluatable> getEvaluatables(RequestType request) {
-        return new ArrayList<>(patientPolicies.values());
+        String eprSpid = AdrUtils.extractEprSpid(request);
+        if (isPatientKnown(eprSpid)) {
+            ArrayList<Evaluatable> result = new ArrayList<>();
+            result.add(basisPolicies.get(new EvaluatableIDImpl("urn:e-health-suisse:2015:policies:policy-bootstrap")));
+            result.add(basisPolicies.get(new EvaluatableIDImpl("urn:e-health-suisse:2015:policies:doc-admin")));
+            result.addAll(patientPoliciesByEprSpid.get(eprSpid));
+            return result;
+        } else {
+            return List.of();
+        }
+    }
+
+    public boolean isPatientKnown(String eprSpid) {
+        return patientPoliciesByEprSpid.containsKey(eprSpid);
     }
 
 }

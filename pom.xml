@@ -12,20 +12,20 @@
     <properties>
         <!-- plugins -->
         <compiler-plugin-version>3.13.0</compiler-plugin-version>
-        <gmavenplus-plugin-version>3.0.2</gmavenplus-plugin-version>
-        <helper-plugin-version>3.6.0</helper-plugin-version>
-        <surefire-plugin-version>3.3.1</surefire-plugin-version>
+        <gmavenplus-plugin-version>4.0.1</gmavenplus-plugin-version>
+        <surefire-plugin-version>3.5.2</surefire-plugin-version>
 
         <!-- libraries -->
-        <groovy-version>4.0.23</groovy-version>
+        <commons-lang-version>3.17.0</commons-lang-version>
+        <groovy-version>4.0.24</groovy-version>
         <herasaf-version>3.0.2</herasaf-version>
-        <ipf-version>5.0-m3</ipf-version>
+        <ipf-version>5.0.0</ipf-version>
         <jaxb-version>4.0.5</jaxb-version>
         <jaxws-api-version>2.3.1</jaxws-api-version>
         <jaxws-rt-version>2.3.4</jaxws-rt-version>
-        <junit-version>5.10.5</junit-version>
-        <log4j-version>2.18.0</log4j-version>
-        <lombok-version>1.18.34</lombok-version>
+        <junit-version>5.11.4</junit-version>
+        <log4j-version>2.24.3</log4j-version>
+        <lombok-version>1.18.36</lombok-version>
         <slf4j-version>2.0.16</slf4j-version>
         <stax2-version>3.1.4</stax2-version>
         <xerces-version>2.12.2</xerces-version>
@@ -48,42 +48,17 @@
             <artifactId>ipf-commons-xml</artifactId>
             <version>${ipf-version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang-version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok-version}</version>
             <scope>provided</scope>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.apache.logging.log4j</groupId>-->
-<!--            <artifactId>log4j-api</artifactId>-->
-<!--            <version>${log4j-version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.logging.log4j</groupId>-->
-<!--            <artifactId>log4j-core</artifactId>-->
-<!--            <version>${log4j-version}</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.logging.log4j</groupId>-->
-<!--            <artifactId>log4j-jcl</artifactId>-->
-<!--            <version>${log4j-version}</version>-->
-<!--        </dependency>-->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-            <version>${slf4j-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j18-impl</artifactId>
-            <version>${log4j-version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
@@ -97,6 +72,12 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j-version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

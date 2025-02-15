@@ -1,21 +1,22 @@
 package ch.admin.foph.epr.policies;
 
 import lombok.extern.slf4j.Slf4j;
-import org.herasaf.xacml.core.api.PDP;
-import org.herasaf.xacml.core.combiningAlgorithm.policy.impl.PolicyDenyOverridesAlgorithm;
 import org.herasaf.xacml.core.context.impl.DecisionType;
-import org.herasaf.xacml.core.context.impl.RequestType;
-import org.herasaf.xacml.core.context.impl.ResponseType;
-import org.herasaf.xacml.core.simplePDP.SimplePDPFactory;
+import org.herasaf.xacml.core.context.impl.ResourceType;
+import org.herasaf.xacml.core.context.impl.ResultType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.openehealth.ipf.commons.ihe.xacml20.model.CE;
 import org.openehealth.ipf.commons.ihe.xacml20.model.NameQualifier;
+import org.openehealth.ipf.commons.ihe.xacml20.model.PpqConstants;
 import org.openehealth.ipf.commons.ihe.xacml20.model.PurposeOfUse;
 import org.openehealth.ipf.commons.ihe.xacml20.model.SubjectRole;
+import org.openehealth.ipf.commons.ihe.xacml20.stub.saml20.assertion.AssertionType;
+import org.openehealth.ipf.commons.ihe.xacml20.stub.saml20.protocol.ResponseType;
+import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.assertion.XACMLAuthzDecisionStatementType;
+import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.protocol.XACMLAuthzDecisionQueryType;
 
 import java.util.Date;
-import java.util.UUID;
+import java.util.List;
 
 /**
  * @author Dmytro Rud
@@ -38,23 +39,7 @@ public class AdrTest {
     private static final String HOME_COMMUNITY_ID_1 = "urn:oid:1.1.1";
     private static final String HOME_COMMUNITY_ID_2 = "urn:oid:2.2.2";
 
-    private static class ConfCodes {
-        private static final CE NORMAL = new CE("17621005", "2.16.840.1.113883.6.96", "SNOMED", "Normal");
-        private static final CE RESTRICTED = new CE("263856008", "2.16.840.1.113883.6.96", "SNOMED", "Restricted");
-        private static final CE SECRET = new CE("1141000195107", "2.16.756.5.30.1.127.3.4", "SwissEPR", "Secret");
-    }
-
-    private static class ActionIds {
-        private static final String ITI_18 = "urn:ihe:iti:2007:RegistryStoredQuery";
-        private static final String ITI_42 = "urn:ihe:iti:2007:RegisterDocumentSet-b";
-        private static final String ITI_57 = "urn:ihe:iti:2010:UpdateDocumentSet";
-        private static final String ITI_81 = "urn:e-health-suisse:2015:patient-audit-administration:RetrieveAtnaAudit";
-        private static final String ITI_92 = "urn:ihe:iti:2018:RestrictedUpdateDocumentSet";
-        private static final String PPQ_1_QUERY = "urn:e-health-suisse:2015:policy-administration:PolicyQuery";
-        private static final String PPQ_1_ADD = "urn:e-health-suisse:2015:policy-administration:AddPolicy";
-        private static final String PPQ_1_UPDATE = "urn:e-health-suisse:2015:policy-administration:UpdatePolicy";
-        private static final String PPQ_1_DELETE = "urn:e-health-suisse:2015:policy-administration:DeletePolicy";
-    }
+    private static final AdrMessageCreator ADR_MESSAGE_CREATOR = new AdrMessageCreator(HOME_COMMUNITY_ID_1);
 
     @Test
     public void test1() throws Exception {
@@ -66,30 +51,33 @@ public class AdrTest {
         pr.addOriginal302PolicySet(EPR_SPID_1, ORG_ID_1, new Date(), "urn:e-health-suisse:2015:policies:access-level:restricted");
         pr.addOriginal303PolicySet(EPR_SPID_1, REP_ID_1, new Date());
 
-        RequestType adrRequest = AdrMessageCreator.createAdrRequest(
-                GLN_1,
-                NameQualifier.PROFESSIONAL,
-                HOME_COMMUNITY_ID_1,
-                SubjectRole.PROFESSIONAL,
-                ORG_ID_1,
-                PurposeOfUse.NORMAL,
-                null,
-                EPR_SPID_1,
-                ConfCodes.NORMAL,
-                null,
-                ActionIds.ITI_18,
-                null,
-                null);
+        AdrResourceXdsAttributes resourceAttrs = new AdrResourceXdsAttributes(EPR_SPID_1, HOME_COMMUNITY_ID_1);
+        XACMLAuthzDecisionQueryType adrRequest = ADR_MESSAGE_CREATOR.createAdrRequest(
+                new AdrSubjectAttributes(
+                        GLN_1,
+                        NameQualifier.PROFESSIONAL,
+                        HOME_COMMUNITY_ID_1,
+                        SubjectRole.PROFESSIONAL,
+                        List.of(ORG_ID_1),
+                        PurposeOfUse.NORMAL
+                ),
+                resourceAttrs,
+                PpqConstants.ActionIds.ITI_18);
 
-        doTest(pr, adrRequest, DecisionType.PERMIT);
+        doTest(pr, resourceAttrs, adrRequest, DecisionType.PERMIT, DecisionType.PERMIT, DecisionType.NOT_APPLICABLE);
     }
 
-    private static void doTest(PolicyRepository pr, RequestType adrRequest, DecisionType... expectedDecisions) {
-        PDP pdp = SimplePDPFactory.getSimplePDP(new PolicyDenyOverridesAlgorithm(), pr);
-        ResponseType adrResponse = pdp.evaluate(adrRequest);
-        Assertions.assertEquals(adrResponse.getResults().size(), adrRequest.getResources().size());
-        for (int i = 0; i < adrResponse.getResults().size(); i++) {
-            Assertions.assertEquals(expectedDecisions[i], adrResponse.getResults().get(i).getDecision());
+    private static void doTest(PolicyRepository pr, AdrAttributes<ResourceType> resourceAttrs, XACMLAuthzDecisionQueryType adrRequest, DecisionType... expectedDecisions) {
+        AdrProvider adrProvider = new AdrProvider(pr, ADR_MESSAGE_CREATOR);
+        ResponseType adrResponse = adrProvider.handleRequest(adrRequest);
+        AssertionType assertion = (AssertionType) adrResponse.getAssertionOrEncryptedAssertion().getFirst();
+        XACMLAuthzDecisionStatementType statement = (XACMLAuthzDecisionStatementType) assertion.getStatementOrAuthnStatementOrAuthzDecisionStatement().getFirst();
+        List<ResultType> results = statement.getResponse().getResults();
+        List<ResourceType> resources = resourceAttrs.createAdrRequestParts();
+
+        Assertions.assertEquals(results.size(), resources.size());
+        for (int i = 0; i < results.size(); i++) {
+            Assertions.assertEquals(expectedDecisions[i], results.get(i).getDecision());
         }
     }
 }
