@@ -15,8 +15,10 @@ import org.openehealth.ipf.commons.ihe.xacml20.stub.saml20.protocol.ResponseType
 import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.assertion.XACMLAuthzDecisionStatementType;
 import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.protocol.XACMLAuthzDecisionQueryType;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Dmytro Rud
@@ -43,31 +45,41 @@ public class AdrTest {
 
     @Test
     public void test1() throws Exception {
-        PolicyRepository pr = new PolicyRepository();
+        PolicyRepository pr = new PolicyRepository(false);
         pr.addOriginal201PolicySet(EPR_SPID_1);
         pr.addOriginal202PolicySet(EPR_SPID_1, "urn:e-health-suisse:2015:policies:access-level:normal");
         pr.addOriginal203PolicySet(EPR_SPID_1, "urn:e-health-suisse:2015:policies:provide-level:restricted");
-        pr.addOriginal301PolicySet(EPR_SPID_1, GLN_1, new Date(), "urn:e-health-suisse:2015:policies:access-level:normal");
-        pr.addOriginal302PolicySet(EPR_SPID_1, ORG_ID_1, new Date(), "urn:e-health-suisse:2015:policies:access-level:restricted");
-        pr.addOriginal303PolicySet(EPR_SPID_1, REP_ID_1, new Date());
+        pr.addOriginal301PolicySet(EPR_SPID_1, GLN_1, LocalDate.now(), "urn:e-health-suisse:2015:policies:access-level:normal");
+        pr.addOriginal302PolicySet(EPR_SPID_1, ORG_ID_1, LocalDate.now(), "urn:e-health-suisse:2015:policies:access-level:restricted");
+        pr.addOriginal303PolicySet(EPR_SPID_1, REP_ID_1, LocalDate.of(2025, Month.DECEMBER, 31));
 
-        AdrResourceXdsAttributes resourceAttrs = new AdrResourceXdsAttributes(EPR_SPID_1, HOME_COMMUNITY_ID_1);
-        XACMLAuthzDecisionQueryType adrRequest = ADR_MESSAGE_CREATOR.createAdrRequest(
-                new AdrSubjectAttributes(
-                        GLN_1,
-                        NameQualifier.PROFESSIONAL,
-                        HOME_COMMUNITY_ID_1,
-                        SubjectRole.PROFESSIONAL,
-                        List.of(ORG_ID_1),
-                        PurposeOfUse.NORMAL
-                ),
-                resourceAttrs,
-                PpqConstants.ActionIds.ITI_18);
+        AdrSubjectAttributes subjectAttrs = new AdrSubjectAttributes(
+                GLN_1,
+                NameQualifier.PROFESSIONAL,
+                SubjectRole.PROFESSIONAL,
+                List.of(ORG_ID_1),
+                PurposeOfUse.NORMAL,
+                HOME_COMMUNITY_ID_1);
 
-        doTest(pr, resourceAttrs, adrRequest, DecisionType.PERMIT, DecisionType.PERMIT, DecisionType.NOT_APPLICABLE);
+        AdrResourceXdsAttributes xdsResourceAttrs = new AdrResourceXdsAttributes(EPR_SPID_1, HOME_COMMUNITY_ID_1);
+        doTest(pr, subjectAttrs, xdsResourceAttrs, PpqConstants.ActionIds.ITI_18, DecisionType.PERMIT, DecisionType.PERMIT, DecisionType.NOT_APPLICABLE);
+
+        AdrResourcePpqAttributes ppqResourceAttrs = new AdrResourcePpqAttributes(UUID.randomUUID().toString(), EPR_SPID_2,
+                "urn:e-health-suisse:2015:policies:access-level:normal", LocalDate.now(), LocalDate.of(2025, Month.DECEMBER, 31));
+        doTest(pr, subjectAttrs, ppqResourceAttrs, PpqConstants.ActionIds.PPQ_1_UPDATE, DecisionType.INDETERMINATE);
+
+        AdrResourceAtcAttributes atcResourceAttrs = new AdrResourceAtcAttributes(EPR_SPID_1);
+        doTest(pr, subjectAttrs, atcResourceAttrs, PpqConstants.ActionIds.ITI_81, DecisionType.NOT_APPLICABLE);
     }
 
-    private static void doTest(PolicyRepository pr, AdrAttributes<ResourceType> resourceAttrs, XACMLAuthzDecisionQueryType adrRequest, DecisionType... expectedDecisions) {
+    private static void doTest(
+            PolicyRepository pr,
+            AdrSubjectAttributes subjectAttrs,
+            AdrAttributes<ResourceType> resourceAttrs,
+            String actionId,
+            DecisionType... expectedDecisions)
+    {
+        XACMLAuthzDecisionQueryType adrRequest = ADR_MESSAGE_CREATOR.createAdrRequest(subjectAttrs, resourceAttrs, actionId);
         AdrProvider adrProvider = new AdrProvider(pr, ADR_MESSAGE_CREATOR);
         ResponseType adrResponse = adrProvider.handleRequest(adrRequest);
         AssertionType assertion = (AssertionType) adrResponse.getAssertionOrEncryptedAssertion().getFirst();

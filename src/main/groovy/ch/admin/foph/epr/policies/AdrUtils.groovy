@@ -11,11 +11,20 @@ import org.openehealth.ipf.commons.ihe.xacml20.stub.hl7v3.CV
 import org.openehealth.ipf.commons.ihe.xacml20.stub.hl7v3.II
 import org.openehealth.ipf.commons.ihe.xacml20.stub.hl7v3.ObjectFactory
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 @UtilityClass
 @CompileStatic
 class AdrUtils {
 
     private static final ObjectFactory HL7V3_OBJECT_FACTORY = new ObjectFactory()
+
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern('yyyy-MM-dd')
+
+    static String formatDate(LocalDate date) {
+        return DATE_FORMATTER.format(date)
+    }
 
     static AttributeType createAttr(String id, DataTypeAttribute dataType, Object value) {
         return new AttributeType(

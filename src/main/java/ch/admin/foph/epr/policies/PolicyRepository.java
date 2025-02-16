@@ -19,8 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -38,17 +37,22 @@ public class PolicyRepository implements PolicyRetrievalPoint {
     private static final String ORIGINAL_DIR_NAME = "src/main/resources/policy-stack/original";
     private static final String MODIFIED_DIR_NAME = "src/main/resources/policy-stack/modified";
 
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-
     private final Map<EvaluatableID, Evaluatable> basisPolicies = new HashMap<>();
     private final Map<EvaluatableID, Evaluatable> patientPoliciesByPolicyId = new HashMap<>();
     private final Map<String, List<Evaluatable>> patientPoliciesByEprSpid = new HashMap<>();
 
     private final Set<String> ruleIds = new HashSet<>();
 
-    public PolicyRepository() throws Exception {
+    /**
+     * @param needUseModified whether the Policy Repository shall consider modified <i>base</i>
+     *                        policies and policy sets (<code>true</code>)
+     *                        or only the original ones (<code>false</code>).
+     */
+    public PolicyRepository(boolean needUseModified) throws Exception {
         loadBasePolicies(ORIGINAL_DIR_NAME);
-        loadBasePolicies(MODIFIED_DIR_NAME);
+        if (needUseModified) {
+            loadBasePolicies(MODIFIED_DIR_NAME);
+        }
     }
 
     public void addOriginal201PolicySet(String eprSpid) throws Exception {
@@ -93,73 +97,73 @@ public class PolicyRepository implements PolicyRetrievalPoint {
         });
     }
 
-    public void addOriginal301PolicySet(String eprSpid, String gln, Date toDate, String hcpReadAccessLevel) throws Exception {
+    public void addOriginal301PolicySet(String eprSpid, String gln, LocalDate toDate, String hcpReadAccessLevel) throws Exception {
         addPatientPolicy(ORIGINAL_DIR_NAME, 301, eprSpid, xml -> {
             xml = xml.replace("2.999", gln);
-            xml = xml.replace("2016-02-07", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2016-02-07", AdrUtils.formatDate(toDate));
             xml = xml.replace("urn:e-health-suisse:2015:policies:exclusion-list", hcpReadAccessLevel);
             return xml;
         });
     }
 
-    public void addModified301PolicySet(String eprSpid, String gln, Date toDate, String hcpReadAccessLevel) throws Exception {
+    public void addModified301PolicySet(String eprSpid, String gln, LocalDate toDate, String hcpReadAccessLevel) throws Exception {
         addPatientPolicy(MODIFIED_DIR_NAME, 301, eprSpid, xml -> {
             xml = xml.replace("2.999", gln);
-            xml = xml.replace("2016-02-07", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2016-02-07", AdrUtils.formatDate(toDate));
             xml = xml.replace("urn:e-health-suisse:2015:policies:exclusion-list", hcpReadAccessLevel);
             return xml;
         });
     }
 
-    public void addOriginal302PolicySet(String eprSpid, String groupOid, Date toDate, String groupReadAccessLevel) throws Exception {
+    public void addOriginal302PolicySet(String eprSpid, String groupOid, LocalDate toDate, String groupReadAccessLevel) throws Exception {
         addPatientPolicy(ORIGINAL_DIR_NAME, 302, eprSpid, xml -> {
             xml = xml.replace("urn:oid:2.999", groupOid);
-            xml = xml.replace("2016-02-07", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2016-02-07", AdrUtils.formatDate(toDate));
             xml = xml.replace("urn:e-health-suisse:2015:policies:access-level:normal", groupReadAccessLevel);
             return xml;
         });
     }
 
-    public void addModified302PolicySet(String eprSpid, String groupOid, Date toDate, String groupReadAccessLevel) throws Exception {
+    public void addModified302PolicySet(String eprSpid, String groupOid, LocalDate toDate, String groupReadAccessLevel) throws Exception {
         addPatientPolicy(MODIFIED_DIR_NAME, 302, eprSpid, xml -> {
             xml = xml.replace("urn:oid:2.999", groupOid);
-            xml = xml.replace("2016-02-07", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2016-02-07", AdrUtils.formatDate(toDate));
             xml = xml.replace("urn:e-health-suisse:2015:policies:access-level:normal", groupReadAccessLevel);
             return xml;
         });
     }
 
-    public void addOriginal303PolicySet(String eprSpid, String representativeId, Date toDate) throws Exception {
+    public void addOriginal303PolicySet(String eprSpid, String representativeId, LocalDate toDate) throws Exception {
         addPatientPolicy(ORIGINAL_DIR_NAME, 303, eprSpid, xml -> {
             xml = xml.replace("2.999", representativeId);
-            xml = xml.replace("2016-02-07", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2016-02-07", AdrUtils.formatDate(toDate));
             return xml;
         });
     }
 
-    public void addModified303PolicySet(String eprSpid, String representativeId, Date toDate) throws Exception {
+    public void addModified303PolicySet(String eprSpid, String representativeId, LocalDate toDate) throws Exception {
         addPatientPolicy(MODIFIED_DIR_NAME, 303, eprSpid, xml -> {
             xml = xml.replace("2.999", representativeId);
-            xml = xml.replace("2016-02-07", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2016-02-07", AdrUtils.formatDate(toDate));
             return xml;
         });
     }
 
-    public void addOriginal304PolicySet(String eprSpid, String gln, Date fromDate, Date toDate, String hcpReadAccessLevel) throws Exception {
+    public void addOriginal304PolicySet(String eprSpid, String gln, LocalDate fromDate, LocalDate toDate, String hcpReadAccessLevel) throws Exception {
         addPatientPolicy(ORIGINAL_DIR_NAME, 304, eprSpid, xml -> {
             xml = xml.replace("2.999", gln);
-            xml = xml.replace("2023-02-01", DATE_FORMAT.format(fromDate));
-            xml = xml.replace("2023-02-28", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2023-02-01", AdrUtils.formatDate(fromDate));
+            xml = xml.replace("2023-02-28", AdrUtils.formatDate(toDate));
             xml = xml.replace("urn:e-health-suisse:2015:policies:access-level:delegation-and-normal", hcpReadAccessLevel);
             return xml;
         });
     }
 
-    public void addModified304PolicySet(String eprSpid, String gln, Date fromDate, Date toDate, String hcpReadAccessLevel, String homeCommunityId) throws Exception {
+    public void addModified304PolicySet(String eprSpid, String gln, LocalDate fromDate, LocalDate toDate, String hcpReadAccessLevel) throws Exception {
         addPatientPolicy(ORIGINAL_DIR_NAME, 304, eprSpid, xml -> {
             xml = xml.replace("2.999", gln);
-            xml = xml.replace("2023-02-01", DATE_FORMAT.format(fromDate));
-            xml = xml.replace("2023-02-28", DATE_FORMAT.format(toDate));
+            xml = xml.replace("2023-02-01", AdrUtils.formatDate(fromDate));
+            xml = xml.replace("2023-02-28", AdrUtils.formatDate(toDate));
             xml = xml.replace("urn:e-health-suisse:2015:policies:access-level:delegation-and-normal", hcpReadAccessLevel);
             return xml;
         });

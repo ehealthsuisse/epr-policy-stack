@@ -17,18 +17,18 @@ class AdrSubjectAttributes extends AdrAttributes<SubjectType> {
 
     private final String subjectId
     private final NameQualifier subjectIdQualifier
-    private final String homeCommunityId
     private final SubjectRole subjectRole
     private final List<String> organizationOids
     private final PurposeOfUse purposeOfUse
+    private final String homeCommunityId
 
-    AdrSubjectAttributes(String subjectId, NameQualifier subjectIdQualifier, String homeCommunityId, SubjectRole subjectRole, List<String> organizationOids, PurposeOfUse purposeOfUse) {
+    AdrSubjectAttributes(String subjectId, NameQualifier subjectIdQualifier, SubjectRole subjectRole, List<String> organizationOids, PurposeOfUse purposeOfUse, String homeCommunityId) {
         this.subjectId = Objects.requireNonNull(subjectId)
         this.subjectIdQualifier = Objects.requireNonNull(subjectIdQualifier)
-        this.homeCommunityId = Objects.requireNonNull(homeCommunityId)
         this.subjectRole = Objects.requireNonNull(subjectRole)
         this.organizationOids = organizationOids
         this.purposeOfUse = Objects.requireNonNull(purposeOfUse)
+        this.homeCommunityId = Objects.requireNonNull(homeCommunityId)
     }
 
     @Override

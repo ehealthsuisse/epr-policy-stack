@@ -7,6 +7,8 @@ import org.herasaf.xacml.core.dataTypeAttribute.impl.DateDataTypeAttribute
 import org.openehealth.ipf.commons.ihe.xacml20.herasaf.types.IiDataTypeAttribute
 import org.openehealth.ipf.commons.ihe.xacml20.model.PpqConstants
 
+import java.time.LocalDate
+
 import static ch.admin.foph.epr.policies.AdrUtils.toIi
 
 /**
@@ -21,12 +23,12 @@ class AdrResourcePpqAttributes extends AdrAttributes<ResourceType> {
     private final String fromDate
     private final String toDate
 
-    AdrResourcePpqAttributes(String policySetId, String eprSpid, String referencedPolicySet, String fromDate, String toDate) {
+    AdrResourcePpqAttributes(String policySetId, String eprSpid, String referencedPolicySet, LocalDate fromDate, LocalDate toDate) {
         this.policySetId = Objects.requireNonNull(policySetId)
         this.eprSpid = Objects.requireNonNull(eprSpid)
         this.referencedPolicySet = Objects.requireNonNull(referencedPolicySet)
-        this.fromDate = fromDate
-        this.toDate = toDate
+        this.fromDate = AdrUtils.formatDate(fromDate)
+        this.toDate = AdrUtils.formatDate(toDate)
     }
 
     @Override

@@ -25,7 +25,8 @@
             <AppenderRef ref="FILE"/>
         </Root>
 
-        <Logger name="ch.admin.foph.epr.policies" level="INFO"/>
+        <Logger name="ch.admin.foph.epr.policies.PolicyRepository" level="INFO"/>
+        <Logger name="ch.admin.foph.epr.policies.AdrProvider" level="INFO"/>
         <Logger name="org.herasaf" level="DEBUG"/>
 
     </Loggers>
