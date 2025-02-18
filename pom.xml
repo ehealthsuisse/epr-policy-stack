@@ -157,18 +157,4 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <repositories>
-        <repository>
-            <id>post-artifactory-releases</id>
-            <name>post-artifactory-releases</name>
-            <url>https://artifactory.tools.pnet.ch/artifactory/maven-ehealth-release-local</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
 </project>
