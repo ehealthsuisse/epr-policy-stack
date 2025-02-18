@@ -72,6 +72,31 @@ public class AdrTest {
         doTest(pr, subjectAttrs, atcResourceAttrs, PpqConstants.ActionIds.ITI_81, DecisionType.NOT_APPLICABLE);
     }
 
+    private void doTestChangedPolicySet(boolean needLoadModified, DecisionType... expectedDecisions) throws Exception {
+        PolicyRepository pr = new PolicyRepository(needLoadModified);
+        pr.addOriginal201PolicySet(EPR_SPID_1);
+        pr.addOriginal202PolicySet(EPR_SPID_1, "urn:e-health-suisse:2015:policies:access-level:normal");
+        pr.addOriginal203PolicySet(EPR_SPID_1, "urn:e-health-suisse:2015:policies:provide-level:normal");
+
+        AdrSubjectAttributes subjectAttrs = new AdrSubjectAttributes(
+                GLN_1,
+                NameQualifier.PROFESSIONAL,
+                SubjectRole.PROFESSIONAL,
+                List.of(ORG_ID_1),
+                PurposeOfUse.NORMAL,
+                HOME_COMMUNITY_ID_1);
+
+        AdrResourceXdsAttributes xdsResourceAttrs = new AdrResourceXdsAttributes(EPR_SPID_1, HOME_COMMUNITY_ID_1);
+
+        doTest(pr, subjectAttrs, xdsResourceAttrs, PpqConstants.ActionIds.ITI_42, expectedDecisions);
+    }
+
+    @Test
+    void testChangedPolicySet() throws Exception {
+        doTestChangedPolicySet(false, DecisionType.PERMIT, DecisionType.PERMIT, DecisionType.NOT_APPLICABLE);
+        doTestChangedPolicySet(true , DecisionType.PERMIT, DecisionType.NOT_APPLICABLE, DecisionType.NOT_APPLICABLE);
+    }
+
     private static void doTest(
             PolicyRepository pr,
             AdrSubjectAttributes subjectAttrs,
