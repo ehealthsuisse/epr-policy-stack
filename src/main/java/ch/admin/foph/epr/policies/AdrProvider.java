@@ -8,7 +8,9 @@ import org.herasaf.xacml.core.context.impl.ResultType;
 import org.herasaf.xacml.core.simplePDP.SimplePDPFactory;
 import org.openehealth.ipf.commons.ihe.xacml20.Xacml20Status;
 import org.openehealth.ipf.commons.ihe.xacml20.Xacml20Utils;
-import org.openehealth.ipf.commons.ihe.xacml20.model.PpqConstants;
+import org.openehealth.ipf.commons.ihe.xacml20.chadr.AdrMessageCreator;
+import org.openehealth.ipf.commons.ihe.xacml20.chadr.AdrUtils;
+import org.openehealth.ipf.commons.ihe.xacml20.model.EprConstants;
 import org.openehealth.ipf.commons.ihe.xacml20.stub.saml20.protocol.ResponseType;
 import org.openehealth.ipf.commons.ihe.xacml20.stub.xacml20.saml.protocol.XACMLAuthzDecisionQueryType;
 import org.openehealth.ipf.commons.xml.XmlUtils;
@@ -66,10 +68,10 @@ public class AdrProvider {
 
             // copy resource ID to the result
             result.setResourceId(subRequest.getResources().getFirst().getAttributes().stream()
-                    .filter(attr -> PpqConstants.AttributeIds.XACML_1_0_RESOURCE_ID.equals(attr.getAttributeId()))
+                    .filter(attr -> EprConstants.AttributeIds.XACML_1_0_RESOURCE_ID.equals(attr.getAttributeId()))
                     .findAny()
                     .map(attr -> attr.getAttributeValues().getFirst().getContent().getFirst().toString())
-                    .orElseGet(() -> "unknown"));
+                    .orElse("unknown"));
             results.add(result);
         }
 
@@ -93,18 +95,6 @@ public class AdrProvider {
         ResponseType adrResponse = adrMessageCreator.createAdrResponse(adrRequest, responseStatus, results);
         log.info("Produced CH:ADR response:\n{}", XmlUtils.renderJaxb(Xacml20Utils.JAXB_CONTEXT, adrResponse, true));
         return adrResponse;
-    }
-
-    private static Xacml20Status valueOfCode(String code) {
-        if (code == null) {
-            return null;
-        }
-        for (Xacml20Status value : Xacml20Status.values()) {
-            if (value.getCode().equals(code)) {
-                return value;
-            }
-        }
-        throw new IllegalArgumentException("Unknown code " + code);
     }
 
 }

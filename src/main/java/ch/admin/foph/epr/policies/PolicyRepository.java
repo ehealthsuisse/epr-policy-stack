@@ -10,6 +10,7 @@ import org.herasaf.xacml.core.policy.PolicyMarshaller;
 import org.herasaf.xacml.core.policy.impl.EvaluatableIDImpl;
 import org.herasaf.xacml.core.policy.impl.PolicyType;
 import org.openehealth.ipf.commons.ihe.xacml20.Xacml20Utils;
+import org.openehealth.ipf.commons.ihe.xacml20.chadr.AdrUtils;
 import org.openehealth.ipf.commons.xml.XmlUtils;
 
 import java.io.File;

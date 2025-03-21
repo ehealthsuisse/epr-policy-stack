@@ -6,8 +6,9 @@ import org.herasaf.xacml.core.context.impl.ResourceType;
 import org.herasaf.xacml.core.context.impl.ResultType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openehealth.ipf.commons.ihe.xacml20.chadr.*;
+import org.openehealth.ipf.commons.ihe.xacml20.model.EprConstants;
 import org.openehealth.ipf.commons.ihe.xacml20.model.NameQualifier;
-import org.openehealth.ipf.commons.ihe.xacml20.model.PpqConstants;
 import org.openehealth.ipf.commons.ihe.xacml20.model.PurposeOfUse;
 import org.openehealth.ipf.commons.ihe.xacml20.model.SubjectRole;
 import org.openehealth.ipf.commons.ihe.xacml20.stub.saml20.assertion.AssertionType;
@@ -62,14 +63,14 @@ public class AdrTest {
                 HOME_COMMUNITY_ID_1);
 
         AdrResourceXdsAttributes xdsResourceAttrs = new AdrResourceXdsAttributes(EPR_SPID_1, HOME_COMMUNITY_ID_1);
-        doTest(pr, subjectAttrs, xdsResourceAttrs, PpqConstants.ActionIds.ITI_18, DecisionType.PERMIT, DecisionType.PERMIT, DecisionType.NOT_APPLICABLE);
+        doTest(pr, subjectAttrs, xdsResourceAttrs, EprConstants.ActionIds.ITI_18, DecisionType.PERMIT, DecisionType.PERMIT, DecisionType.NOT_APPLICABLE);
 
         AdrResourcePpqAttributes ppqResourceAttrs = new AdrResourcePpqAttributes(UUID.randomUUID().toString(), EPR_SPID_2,
                 "urn:e-health-suisse:2015:policies:access-level:normal", LocalDate.now(), LocalDate.of(2025, Month.DECEMBER, 31));
-        doTest(pr, subjectAttrs, ppqResourceAttrs, PpqConstants.ActionIds.PPQ_1_UPDATE, DecisionType.INDETERMINATE);
+        doTest(pr, subjectAttrs, ppqResourceAttrs, EprConstants.ActionIds.PPQ_1_UPDATE, DecisionType.INDETERMINATE);
 
         AdrResourceAtcAttributes atcResourceAttrs = new AdrResourceAtcAttributes(EPR_SPID_1);
-        doTest(pr, subjectAttrs, atcResourceAttrs, PpqConstants.ActionIds.ITI_81, DecisionType.NOT_APPLICABLE);
+        doTest(pr, subjectAttrs, atcResourceAttrs, EprConstants.ActionIds.ITI_81, DecisionType.NOT_APPLICABLE);
     }
 
     private void doTestChangedPolicySet(boolean needLoadModified, DecisionType... expectedDecisions) throws Exception {
@@ -88,7 +89,7 @@ public class AdrTest {
 
         AdrResourceXdsAttributes xdsResourceAttrs = new AdrResourceXdsAttributes(EPR_SPID_1, HOME_COMMUNITY_ID_1);
 
-        doTest(pr, subjectAttrs, xdsResourceAttrs, PpqConstants.ActionIds.ITI_42, expectedDecisions);
+        doTest(pr, subjectAttrs, xdsResourceAttrs, EprConstants.ActionIds.ITI_42, expectedDecisions);
     }
 
     @Test
